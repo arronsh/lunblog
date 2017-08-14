@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>Arron&#39;s Lab</title>
   
-  <link href="/atom.xml" rel="self"/>
+  <link href="/lunstd/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
   <updated>2017-08-12T13:10:13.000Z</updated>
