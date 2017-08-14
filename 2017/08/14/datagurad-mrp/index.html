@@ -78,7 +78,7 @@
 <link href="/lunstd/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="dataguard," />
 
 
 
@@ -96,13 +96,18 @@
 
 
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="Arron&#39;s Lab">
-<meta property="og:url" content="http://yoursite.com/index.html">
+<meta name="description" content="一、现象昨天凌晨DG告警，MRP进程不存在： ***** bsCentreon *****  Notification Type: PROBLEM  Service: check_dataguard_mrp Host: db_dg_bs Address: *.*.*.* State: CRITICAL  Date/Time: Thu Jul 13 22:59:29 CST 2017  Additi">
+<meta name="keywords" content="dataguard">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dataguard故障--MRP进程终止">
+<meta property="og:url" content="http://yoursite.com/2017/08/14/datagurad-mrp/index.html">
 <meta property="og:site_name" content="Arron&#39;s Lab">
+<meta property="og:description" content="一、现象昨天凌晨DG告警，MRP进程不存在： ***** bsCentreon *****  Notification Type: PROBLEM  Service: check_dataguard_mrp Host: db_dg_bs Address: *.*.*.* State: CRITICAL  Date/Time: Thu Jul 13 22:59:29 CST 2017  Additi">
 <meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-08-14T13:32:05.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Arron&#39;s Lab">
+<meta name="twitter:title" content="Dataguard故障--MRP进程终止">
+<meta name="twitter:description" content="一、现象昨天凌晨DG告警，MRP进程不存在： ***** bsCentreon *****  Notification Type: PROBLEM  Service: check_dataguard_mrp Host: db_dg_bs Address: *.*.*.* State: CRITICAL  Date/Time: Thu Jul 13 22:59:29 CST 2017  Additi">
 
 
 
@@ -131,13 +136,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/"/>
+  <link rel="canonical" href="http://yoursite.com/2017/08/14/datagurad-mrp/"/>
 
 
 
 
 
-  <title>Arron's Lab</title>
+  <title>Dataguard故障--MRP进程终止 | Arron's Lab</title>
   
 
 
@@ -156,9 +161,7 @@
     
   
 
-  <div class="container sidebar-position-left 
-   page-home 
- ">
+  <div class="container sidebar-position-left page-post-detail ">
     <div class="headband"></div>
 
     <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
@@ -251,9 +254,9 @@
         <div class="content-wrap">
           <div id="content" class="content">
             
-  <section id="posts" class="posts-expand">
+
+  <div id="posts" class="posts-expand">
     
-      
 
   
 
@@ -283,9 +286,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/lunstd/2017/08/14/datagurad-mrp/" itemprop="url">Dataguard故障--MRP进程终止</a></h1>
+          <h1 class="post-title" itemprop="name headline">Dataguard故障--MRP进程终止</h1>
         
 
         <div class="post-meta">
@@ -335,8 +336,7 @@
       
 
       
-        
-          <h2 id="一、现象"><a href="#一、现象" class="headerlink" title="一、现象"></a>一、现象</h2><p>昨天凌晨DG告警，MRP进程不存在：</p>
+        <h2 id="一、现象"><a href="#一、现象" class="headerlink" title="一、现象"></a>一、现象</h2><p>昨天凌晨DG告警，MRP进程不存在：</p>
 <pre><code>***** bsCentreon *****
 
 Notification Type: PROBLEM
@@ -351,15 +351,52 @@ Date/Time: Thu Jul 13 22:59:29 CST 2017
 Additional Info:
 
 CRITICAL!-DataGuards MRP0 process is crash, please check it!
+</code></pre><a id="more"></a>    
+<h2 id="二、故障诊断"><a href="#二、故障诊断" class="headerlink" title="二、故障诊断"></a>二、故障诊断</h2><h3 id="1-登上DG服务器查看MRP进程"><a href="#1-登上DG服务器查看MRP进程" class="headerlink" title="1. 登上DG服务器查看MRP进程:"></a>1. 登上DG服务器查看MRP进程:</h3><pre><code>ps -ef|grep mrp
+</code></pre><p>或者</p>
+<pre><code>select pid, process, status, sequence#, delay_mins, block#, blocks
+  from v$managed_standby
+ order by sequence#;
+</code></pre><p>都没发现MRP进程的相关信息
+　</p>
+<h3 id="2-查看错误日志"><a href="#2-查看错误日志" class="headerlink" title="2. 查看错误日志"></a>2. 查看错误日志</h3><pre><code>$vi alter_xxx.log
+
+Thu Jul 13 22:44:22 2017
+File #42 added to control file as &apos;UNNAMED00042&apos; because
+the parameter STANDBY_FILE_MANAGEMENT is set to MANUAL
+The file should be manually created to continue.
+MRP0: Background Media Recovery terminated with error 1274
+Errors in file /data/app/oracle/diag/rdbms/masadbdgbs/masadb/trace/masadb_pr00_15599.trc:
+ORA-01274: cannot add datafile &apos;+DATA01/masadb/datafile/ts_part_table4_1.dbf&apos; - file could not be created
+Managed Standby Recovery not using Real Time Apply
+Recovery interrupted!
+Recovered data files to a consistent state at change 5706142969
+Thu Jul 13 22:44:24 2017
+MRP0: Background Media Recovery process shutdown (masadb)
+</code></pre><p>发现在故障报出的时间点前，MRP进程确实shutdown了。</p>
+<h3 id="3-故障分析"><a href="#3-故障分析" class="headerlink" title="3. 故障分析"></a>3. 故障分析</h3><ol>
+<li>主库上新添加的数据文件<code>+DATA01/masadb/datafile/ts_part_table4_1.dbf</code>没有同步到DG备库上。</li>
+<li><p>再往上看发现这样的字样：</p>
+ <figure class="highlight delphi"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">File</span> <span class="string">#42</span> added <span class="keyword">to</span> control <span class="keyword">file</span> <span class="keyword">as</span> <span class="string">'UNNAMED00042'</span> because</div><div class="line">    the parameter STANDBY_FILE_MANAGEMENT <span class="keyword">is</span> <span class="keyword">set</span> <span class="keyword">to</span> MANUAL</div><div class="line">    The <span class="keyword">file</span> should be manually created <span class="keyword">to</span> <span class="keyword">continue</span>.</div></pre></td></tr></table></figure>
+<p> 42号文件由于参数<code>STANDBY_FILE_MANAGEMENT=MANUAL</code>的原因，没有被正确创建，命名为’UNNAMED00042’</p>
+</li>
+<li>查看相关视图：<figure class="highlight routeros"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">SQL&gt; show parameter standby_file_management</div><div class="line"></div><div class="line">NAME                    <span class="built_in"> TYPE </span>    VALUE</div><div class="line">------------------------------------ ----------- ------------------------------</div><div class="line">standby_file_management          string     MANUAL</div><div class="line"></div><div class="line">SQL&gt; select file_name <span class="keyword">from</span> dba_data_files where <span class="attribute">file_id</span>=42;</div><div class="line"></div><div class="line"><span class="literal">no</span> rows selected</div><div class="line"></div><div class="line">SQL&gt; select name <span class="keyword">from</span> v<span class="variable">$datafile</span> where file#=42;</div><div class="line"></div><div class="line">NAME</div><div class="line">--------------------------------------------------------------------------------</div><div class="line">/data/app/oracle/product/11.2.0/db_1/dbs/UNNAMED00042</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>至此已经清楚故障的原因了：</p>
+<ol>
+<li>由于<code>standby_file_management=MANUAL</code>，导致主库新添加的数据文件，在传到从库时路径不一致不能自动创建，并命名为’UNNAMED00042’</li>
+<li>由于新数据文件不存在，导致MRP在应用日志是出错而crash。</li>
+<li>至于standby_file_management参数，是由于上次维护DG时，将手工设置为MANUAL，方便进行redo log文件的清理。而事后未调整回AUTO所致</li>
+</ol>
+<h3 id="4-处理方案"><a href="#4-处理方案" class="headerlink" title="4. 处理方案"></a>4. 处理方案</h3><pre><code># 注意，该命令执行必须要确保standby_file_management=MANUAL，否则会报错
+SQL&gt; ALTER DATABASE CREATE DATAFILE &apos;/data/app/oracle/product/11.2.0/db_1/dbs/UNNAMED00042&apos; as &apos;/data/oradata/masadb/ts_part_table4_1.dbf&apos;;
+
+SQL&gt; alter database recover managed standby database using current logfile disconnect from session;
+</code></pre><p>观察日志输出，MRP进程启动，能够正确应用日志</p>
+<p>别忘了把参数改回来</p>
+<pre><code>ALTER SYSTEM SET standby_file_management=&apos;AUTO&apos;;
 </code></pre>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/lunstd/2017/08/14/datagurad-mrp/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
       
     </div>
     
@@ -374,262 +411,36 @@ CRITICAL!-DataGuards MRP0 process is crash, please check it!
 
     <footer class="post-footer">
       
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/lunstd/2017/08/14/datagurad-gap/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="a dba's blog">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/lunstd/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Arron's Lab">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/lunstd/2017/08/14/datagurad-gap/" itemprop="url">远程机房Dataguard出现GAP问题处理</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-14T21:00:05+08:00">
-                2017-08-14
-              </time>
-            
-
-            
-
-            
-          </span>
-
+        <div class="post-tags">
           
-
+            <a href="/lunstd/tags/dataguard/" rel="tag"># dataguard</a>
           
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
         </div>
-      </header>
-    
+      
 
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
+      
       
       
 
       
-        
-          <p>##故障现象<br>远程机房Dataguard告警系统报警出现GAP，登陆备库查看相关视图和日志</p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/lunstd/2017/08/14/datagurad-gap/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/lunstd/2017/08/14/datagurad-gap/" rel="next" title="远程机房Dataguard出现GAP问题处理">
+                <i class="fa fa-chevron-left"></i> 远程机房Dataguard出现GAP问题处理
+              </a>
+            
           </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
 
-    
+          <span class="post-nav-divider"></span>
 
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
-      
-
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/lunstd/2017/08/12/clickhouse-1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="a dba's blog">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/lunstd/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Arron's Lab">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/lunstd/2017/08/12/clickhouse-1/" itemprop="url">ClickHouse安装</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
+          <div class="post-nav-prev post-nav-item">
             
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-12T21:06:30+08:00">
-                2017-08-12
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
+          </div>
         </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
       
 
       
-        
-          <p>目前ClickHouse对ubuntu系统支持比较友好，对于centos就差一点。Ubuntu有deb包可以直接安装。对于centos的则需要自己编译。</p>
-          <!--noindex-->
-          <div class="post-button text-center">
-            <a class="btn" href="/lunstd/2017/08/12/clickhouse-1/#more" rel="contents">
-              阅读全文 &raquo;
-            </a>
-          </div>
-          <!--/noindex-->
-        
-      
-    </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
       
     </footer>
   </div>
@@ -639,138 +450,11 @@ CRITICAL!-DataGuards MRP0 process is crash, please check it!
   </article>
 
 
-    
-      
 
-  
-
-  
-  
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/lunstd/2017/08/12/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="a dba's blog">
-      <meta itemprop="description" content="">
-      <meta itemprop="image" content="/lunstd/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Arron's Lab">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                <a class="post-title-link" href="/lunstd/2017/08/12/hello-world/" itemprop="url">Hello World</a></h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">发表于</span>
-              
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-12T15:41:49+08:00">
-                2017-08-12
-              </time>
-            
-
-            
-
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo new <span class="string">"My New Post"</span></div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo server</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo generate</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$ hexo deploy</div></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>
-
-          
-        
+    <div class="post-spread">
       
     </div>
-    
-    
-    
-
-    
-
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
   </div>
-  
-  
-  
-  </article>
-
-
-    
-  </section>
-
-  
 
 
           </div>
@@ -778,6 +462,10 @@ CRITICAL!-DataGuards MRP0 process is crash, please check it!
 
 
           
+  <div class="comments" id="comments">
+    
+  </div>
+
 
         </div>
         
@@ -798,8 +486,17 @@ CRITICAL!-DataGuards MRP0 process is crash, please check it!
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <section class="site-overview sidebar-panel sidebar-panel-active">
+      <section class="site-overview sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
           <img class="site-author-image" itemprop="image"
                src="/lunstd/images/avatar.gif"
@@ -859,6 +556,22 @@ CRITICAL!-DataGuards MRP0 process is crash, please check it!
 
       </section>
 
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一、现象"><span class="nav-number">1.</span> <span class="nav-text">一、现象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二、故障诊断"><span class="nav-number">2.</span> <span class="nav-text">二、故障诊断</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-登上DG服务器查看MRP进程"><span class="nav-number">2.1.</span> <span class="nav-text">1. 登上DG服务器查看MRP进程:</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-查看错误日志"><span class="nav-number">2.2.</span> <span class="nav-text">2. 查看错误日志</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-故障分析"><span class="nav-number">2.3.</span> <span class="nav-text">3. 故障分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-处理方案"><span class="nav-number">2.4.</span> <span class="nav-text">4. 处理方案</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
       
 
       
@@ -985,10 +698,10 @@ CRITICAL!-DataGuards MRP0 process is crash, please check it!
 
 
   
-    <script type="text/javascript" src="/lunstd/js/src/scrollspy.js?v=5.1.2"></script>
+  <script type="text/javascript" src="/lunstd/js/src/scrollspy.js?v=5.1.2"></script>
 <script type="text/javascript" src="/lunstd/js/src/post-details.js?v=5.1.2"></script>
 
-  
+
 
   
 

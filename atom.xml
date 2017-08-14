@@ -5,7 +5,7 @@
   <link href="/lunstd/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2017-08-14T13:05:24.000Z</updated>
+  <updated>2017-08-14T13:32:05.000Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -14,6 +14,101 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Dataguard故障--MRP进程终止</title>
+    <link href="http://yoursite.com/2017/08/14/datagurad-mrp/"/>
+    <id>http://yoursite.com/2017/08/14/datagurad-mrp/</id>
+    <published>2017-08-14T13:29:57.000Z</published>
+    <updated>2017-08-14T13:32:05.000Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="一、现象"><a href="#一、现象" class="headerlink" title="一、现象"></a>一、现象</h2><p>昨天凌晨DG告警，MRP进程不存在：</p>
+<pre><code>***** bsCentreon *****
+
+Notification Type: PROBLEM
+
+Service: check_dataguard_mrp
+Host: db_dg_bs
+Address: *.*.*.*
+State: CRITICAL
+
+Date/Time: Thu Jul 13 22:59:29 CST 2017
+
+Additional Info:
+
+CRITICAL!-DataGuards MRP0 process is crash, please check it!
+</code></pre><a id="more"></a>    
+<h2 id="二、故障诊断"><a href="#二、故障诊断" class="headerlink" title="二、故障诊断"></a>二、故障诊断</h2><h3 id="1-登上DG服务器查看MRP进程"><a href="#1-登上DG服务器查看MRP进程" class="headerlink" title="1. 登上DG服务器查看MRP进程:"></a>1. 登上DG服务器查看MRP进程:</h3><pre><code>ps -ef|grep mrp
+</code></pre><p>或者</p>
+<pre><code>select pid, process, status, sequence#, delay_mins, block#, blocks
+  from v$managed_standby
+ order by sequence#;
+</code></pre><p>都没发现MRP进程的相关信息
+　</p>
+<h3 id="2-查看错误日志"><a href="#2-查看错误日志" class="headerlink" title="2. 查看错误日志"></a>2. 查看错误日志</h3><pre><code>$vi alter_xxx.log
+
+Thu Jul 13 22:44:22 2017
+File #42 added to control file as &apos;UNNAMED00042&apos; because
+the parameter STANDBY_FILE_MANAGEMENT is set to MANUAL
+The file should be manually created to continue.
+MRP0: Background Media Recovery terminated with error 1274
+Errors in file /data/app/oracle/diag/rdbms/masadbdgbs/masadb/trace/masadb_pr00_15599.trc:
+ORA-01274: cannot add datafile &apos;+DATA01/masadb/datafile/ts_part_table4_1.dbf&apos; - file could not be created
+Managed Standby Recovery not using Real Time Apply
+Recovery interrupted!
+Recovered data files to a consistent state at change 5706142969
+Thu Jul 13 22:44:24 2017
+MRP0: Background Media Recovery process shutdown (masadb)
+</code></pre><p>发现在故障报出的时间点前，MRP进程确实shutdown了。</p>
+<h3 id="3-故障分析"><a href="#3-故障分析" class="headerlink" title="3. 故障分析"></a>3. 故障分析</h3><ol>
+<li>主库上新添加的数据文件<code>+DATA01/masadb/datafile/ts_part_table4_1.dbf</code>没有同步到DG备库上。</li>
+<li><p>再往上看发现这样的字样：</p>
+ <figure class="highlight delphi"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">File</span> <span class="string">#42</span> added <span class="keyword">to</span> control <span class="keyword">file</span> <span class="keyword">as</span> <span class="string">'UNNAMED00042'</span> because</div><div class="line">    the parameter STANDBY_FILE_MANAGEMENT <span class="keyword">is</span> <span class="keyword">set</span> <span class="keyword">to</span> MANUAL</div><div class="line">    The <span class="keyword">file</span> should be manually created <span class="keyword">to</span> <span class="keyword">continue</span>.</div></pre></td></tr></table></figure>
+<p> 42号文件由于参数<code>STANDBY_FILE_MANAGEMENT=MANUAL</code>的原因，没有被正确创建，命名为’UNNAMED00042’</p>
+</li>
+<li>查看相关视图：<figure class="highlight routeros"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">SQL&gt; show parameter standby_file_management</div><div class="line"></div><div class="line">NAME                    <span class="built_in"> TYPE </span>    VALUE</div><div class="line">------------------------------------ ----------- ------------------------------</div><div class="line">standby_file_management          string     MANUAL</div><div class="line"></div><div class="line">SQL&gt; select file_name <span class="keyword">from</span> dba_data_files where <span class="attribute">file_id</span>=42;</div><div class="line"></div><div class="line"><span class="literal">no</span> rows selected</div><div class="line"></div><div class="line">SQL&gt; select name <span class="keyword">from</span> v<span class="variable">$datafile</span> where file#=42;</div><div class="line"></div><div class="line">NAME</div><div class="line">--------------------------------------------------------------------------------</div><div class="line">/data/app/oracle/product/11.2.0/db_1/dbs/UNNAMED00042</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>至此已经清楚故障的原因了：</p>
+<ol>
+<li>由于<code>standby_file_management=MANUAL</code>，导致主库新添加的数据文件，在传到从库时路径不一致不能自动创建，并命名为’UNNAMED00042’</li>
+<li>由于新数据文件不存在，导致MRP在应用日志是出错而crash。</li>
+<li>至于standby_file_management参数，是由于上次维护DG时，将手工设置为MANUAL，方便进行redo log文件的清理。而事后未调整回AUTO所致</li>
+</ol>
+<h3 id="4-处理方案"><a href="#4-处理方案" class="headerlink" title="4. 处理方案"></a>4. 处理方案</h3><pre><code># 注意，该命令执行必须要确保standby_file_management=MANUAL，否则会报错
+SQL&gt; ALTER DATABASE CREATE DATAFILE &apos;/data/app/oracle/product/11.2.0/db_1/dbs/UNNAMED00042&apos; as &apos;/data/oradata/masadb/ts_part_table4_1.dbf&apos;;
+
+SQL&gt; alter database recover managed standby database using current logfile disconnect from session;
+</code></pre><p>观察日志输出，MRP进程启动，能够正确应用日志</p>
+<p>别忘了把参数改回来</p>
+<pre><code>ALTER SYSTEM SET standby_file_management=&apos;AUTO&apos;;
+</code></pre>]]></content>
+    
+    <summary type="html">
+    
+      &lt;h2 id=&quot;一、现象&quot;&gt;&lt;a href=&quot;#一、现象&quot; class=&quot;headerlink&quot; title=&quot;一、现象&quot;&gt;&lt;/a&gt;一、现象&lt;/h2&gt;&lt;p&gt;昨天凌晨DG告警，MRP进程不存在：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;***** bsCentreon *****
+
+Notification Type: PROBLEM
+
+Service: check_dataguard_mrp
+Host: db_dg_bs
+Address: *.*.*.*
+State: CRITICAL
+
+Date/Time: Thu Jul 13 22:59:29 CST 2017
+
+Additional Info:
+
+CRITICAL!-DataGuards MRP0 process is crash, please check it!
+&lt;/code&gt;&lt;/pre&gt;
+    
+    </summary>
+    
+    
+      <category term="dataguard" scheme="http://yoursite.com/tags/dataguard/"/>
+    
+  </entry>
   
   <entry>
     <title>远程机房Dataguard出现GAP问题处理</title>
