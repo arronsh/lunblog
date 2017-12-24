@@ -5,7 +5,7 @@
   <link href="/lunblog/atom.xml" rel="self"/>
   
   <link href="https://arronsh.github.io/lunblog/"/>
-  <updated>2017-12-24T10:20:43.259Z</updated>
+  <updated>2017-12-24T10:58:56.825Z</updated>
   <id>https://arronsh.github.io/lunblog/</id>
   
   <author>
@@ -20,13 +20,13 @@
     <link href="https://arronsh.github.io/lunblog/2017/12/24/install-pmm/"/>
     <id>https://arronsh.github.io/lunblog/2017/12/24/install-pmm/</id>
     <published>2017-12-24T09:08:27.000Z</published>
-    <updated>2017-12-24T10:20:43.259Z</updated>
+    <updated>2017-12-24T10:58:56.825Z</updated>
     
     <content type="html"><![CDATA[<h1 id="安装PMM监控MySQL（CentOS-7）"><a href="#安装PMM监控MySQL（CentOS-7）" class="headerlink" title="安装PMM监控MySQL（CentOS 7）"></a>安装PMM监控MySQL（CentOS 7）</h1><h2 id="一、PMM介绍"><a href="#一、PMM介绍" class="headerlink" title="一、PMM介绍"></a>一、PMM介绍</h2><p>Percona Montoring and Management(PMM)是一款开源的用于管理和监控MySQL和MongoDB性能的开源平台，通过PMM客户端收集到的DB监控数据用第三方软件Grafana画图展示出来。</p>
 <p>PMM提供了对MyISAM、InnoDB、TokuDB和PXC/Galera的监控，另外也提供了Query Analytics的功能，可以检视执行了哪些SQL指令，并对执行效能较差的语法进行优化。</p>
 <p>PMM针对操作系统的部分也提供了硬盘、网络、CPU和RAM的监控，特别是它提供了Context switches、Processes和interrupts的监控，Conntext Switches可以看到CPU上下切换文的状况，Processes可以方便了解系统有多少程序在等待I/O</p>
 <a id="more"></a>
-<h2 id="二、PMM架构解析"><a href="#二、PMM架构解析" class="headerlink" title="二、PMM架构解析"></a>二、PMM架构解析</h2><p> <img src="/media/pic_20171224_1.png" alt="屏幕快照 2017-12-24 下午12.48.54"></p>
+<h2 id="二、PMM架构解析"><a href="#二、PMM架构解析" class="headerlink" title="二、PMM架构解析"></a>二、PMM架构解析</h2><p> <img src="/lunblog/2017/12/24/install-pmm/pic_20171224_1.png" alt="屏幕快照 2017-12-24 下午12.48.54"></p>
 <ul>
 <li>PMM Server：Server组件，作为Docker镜像提供的<ul>
 <li>Query Analytics（QAN）是用来搜集指令并作性能分析的，其组件分别如下：<ul>
@@ -88,7 +88,7 @@
 </ul>
 <h3 id="5-验证PMM-Server安装"><a href="#5-验证PMM-Server安装" class="headerlink" title="5. 验证PMM Server安装"></a>5. 验证PMM Server安装</h3><p>查看Docker运行状态</p>
 <figure class="highlight axapta"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[root@dbsrv1 opt]<span class="meta"># docker ps</span></div><div class="line">CONTAINER ID        IMAGE                       COMMAND                CREATED             STATUS              PORTS                         NAMES</div><div class="line"><span class="number">26</span>a60e9b504f        percona/pmm-<span class="keyword">server</span>:latest   <span class="string">"/opt/entrypoint.sh"</span>   <span class="number">4</span> minutes ago       Up <span class="number">4</span> minutes        <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">80</span>-&gt;<span class="number">80</span>/tcp, <span class="number">443</span>/tcp   pmm-<span class="keyword">server</span></div></pre></td></tr></table></figure>
-<p>运行PMM Server之后，可以使用运行容器的主机IP地址(192.168.56.130)访问PMM Web界面。<br><img src="/media/pic_20171224_2.png" alt="屏幕快照 2017-12-24 下午2.22.50"></p>
+<p>运行PMM Server之后，可以使用运行容器的主机IP地址(192.168.56.130)访问PMM Web界面。<br><img src="/lunblog/2017/12/24/install-pmm/pic_20171224_2.png" alt="屏幕快照 2017-12-24 下午2.22.50"></p>
 <h2 id="四、安装PMM-Client"><a href="#四、安装PMM-Client" class="headerlink" title="四、安装PMM Client"></a>四、安装PMM Client</h2><p>PMM Client是安装在你要监视的MySQL或MongoDB主机上的一组代理组件。用于收集关于一般系统和数据库性能的各种数据，并将这些数据发送到相应的PMM服务器组件。</p>
 <p>PMM Client可以运行在任何Linux发行版本上，这里已CentOS 7为例。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> rpm -ivh https://www.percona.com/downloads/pmm-client/LATEST/pmm-client-1.5.3-1.x86_64.rpm </span></div><div class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">which</span> pmm-admin</span></div><div class="line">/usr/sbin/pmm-admin</div></pre></td></tr></table></figure>
@@ -142,12 +142,12 @@
 <h3 id="1-指标监控"><a href="#1-指标监控" class="headerlink" title="1. 指标监控"></a>1. 指标监控</h3><p>该监控工具提供了对数据库服务器的关键指标，基于时间的图标展示。</p>
 <p>通过主题分为若干个仪表板，一些与MySQL或MongoDB相关，其他的则提供了一般的系统指标</p>
 <p>要访问仪表板，需要提供默认用户：admin，密码：admin</p>
-<p><img src="/media/pic_20171224_3.png" alt="屏幕快照 2017-12-24 下午3.30.16"></p>
+<p><img src="/lunblog/2017/12/24/install-pmm/pic_20171224_3.png" alt="屏幕快照 2017-12-24 下午3.30.16"></p>
 <h3 id="2-慢查询分析"><a href="#2-慢查询分析" class="headerlink" title="2. 慢查询分析"></a>2. 慢查询分析</h3><p>该查询分析工具，使数据库管理员和应用程序开发人员分析一段时间内的MySQL查询，发现性能问题，优化数据库性能。</p>
 <p>PMM使用slow log作为查询源（还可以以performance_schema作为数据源），记得需要开启慢查询日志。</p>
 <figure class="highlight makefile"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">slow_query_log=1   <span class="comment">#开启慢查询日志；</span></div><div class="line">long_query_time=0  <span class="comment">#超过多少秒的查询就写入日志；</span></div></pre></td></tr></table></figure>
 <p>以下图片显示了Query Analytics</p>
-<p><img src="/media/pic_20171224_4.png" alt="屏幕快照 2017-12-24 下午3.58.00"></p>
+<p><img src="/lunblog/2017/12/24/install-pmm/pic_20171224_4.png" alt="屏幕快照 2017-12-24 下午3.58.00"></p>
 <p>汇总表包含以%GTT(总计时间的百分比)排名的前十名查询，这是MySQL服务器执行特定查询所花费的时间百分比，与在所选期间执行所有查询的总时间相比。</p>
 <p>在汇总表上单击，可以获取该查询的详细信息，包括该SQL的所有指标，SQL语句示例，explain等</p>
 <p>另外查询数据的默认源是慢查询日志，可以调整为Performance Schema。</p>
