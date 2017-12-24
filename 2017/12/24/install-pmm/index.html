@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lunblog/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lunblog/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/lunblog/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="pmm," />
+
+
+
+
+
+  <link rel="alternate" href="/lunblog/atom.xml" title="Arron's Lab" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/lunblog/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="安装PMM监控MySQL（CentOS 7）一、PMM介绍Percona Montoring and Management(PMM)是一款开源的用于管理和监控MySQL和MongoDB性能的开源平台，通过PMM客户端收集到的DB监控数据用第三方软件Grafana画图展示出来。 PMM提供了对MyISAM、InnoDB、TokuDB和PXC/Galera的监控，另外也提供了Query Analyti">
+<meta name="keywords" content="pmm">
+<meta property="og:type" content="article">
+<meta property="og:title" content="安装PMM监控MySQL（CentOS 7）">
+<meta property="og:url" content="http://yoursite.com/2017/12/24/install-pmm/index.html">
+<meta property="og:site_name" content="Arron&#39;s Lab">
+<meta property="og:description" content="安装PMM监控MySQL（CentOS 7）一、PMM介绍Percona Montoring and Management(PMM)是一款开源的用于管理和监控MySQL和MongoDB性能的开源平台，通过PMM客户端收集到的DB监控数据用第三方软件Grafana画图展示出来。 PMM提供了对MyISAM、InnoDB、TokuDB和PXC/Galera的监控，另外也提供了Query Analyti">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://yoursite.com/Users/apple/Documents/个人笔记/picture/屏幕快照%202017-12-24%20下午12.48.54.png">
+<meta property="og:image" content="http://yoursite.com/2017/12/24/install-pmm/picture/屏幕快照%202017-12-24%20下午2.22.50.png">
+<meta property="og:image" content="http://yoursite.com/2017/12/24/install-pmm/picture/屏幕快照%202017-12-24%20下午3.30.16.png">
+<meta property="og:image" content="http://yoursite.com/2017/12/24/install-pmm/picture/屏幕快照%202017-12-24%20下午3.58.00.png">
+<meta property="og:updated_time" content="2017-12-24T09:17:53.569Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="安装PMM监控MySQL（CentOS 7）">
+<meta name="twitter:description" content="安装PMM监控MySQL（CentOS 7）一、PMM介绍Percona Montoring and Management(PMM)是一款开源的用于管理和监控MySQL和MongoDB性能的开源平台，通过PMM客户端收集到的DB监控数据用第三方软件Grafana画图展示出来。 PMM提供了对MyISAM、InnoDB、TokuDB和PXC/Galera的监控，另外也提供了Query Analyti">
+<meta name="twitter:image" content="http://yoursite.com/Users/apple/Documents/个人笔记/picture/屏幕快照%202017-12-24%20下午12.48.54.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/lunblog/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/12/24/install-pmm/"/>
+
+
+
+
+
+  <title>安装PMM监控MySQL（CentOS 7） | Arron's Lab</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/lunblog/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Arron's Lab</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/lunblog/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/lunblog/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/lunblog/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/lunblog/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/lunblog/2017/12/24/install-pmm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="a dba's blog">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/lunblog/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Arron's Lab">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">安装PMM监控MySQL（CentOS 7）</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-12-24T17:08:27+08:00">
+                2017-12-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="安装PMM监控MySQL（CentOS-7）"><a href="#安装PMM监控MySQL（CentOS-7）" class="headerlink" title="安装PMM监控MySQL（CentOS 7）"></a>安装PMM监控MySQL（CentOS 7）</h1><h2 id="一、PMM介绍"><a href="#一、PMM介绍" class="headerlink" title="一、PMM介绍"></a>一、PMM介绍</h2><p>Percona Montoring and Management(PMM)是一款开源的用于管理和监控MySQL和MongoDB性能的开源平台，通过PMM客户端收集到的DB监控数据用第三方软件Grafana画图展示出来。</p>
+<p>PMM提供了对MyISAM、InnoDB、TokuDB和PXC/Galera的监控，另外也提供了Query Analytics的功能，可以检视执行了哪些SQL指令，并对执行效能较差的语法进行优化。</p>
+<p>PMM针对操作系统的部分也提供了硬盘、网络、CPU和RAM的监控，特别是它提供了Context switches、Processes和interrupts的监控，Conntext Switches可以看到CPU上下切换文的状况，Processes可以方便了解系统有多少程序在等待I/O</p>
+<a id="more"></a>
+<h2 id="二、PMM架构解析"><a href="#二、PMM架构解析" class="headerlink" title="二、PMM架构解析"></a>二、PMM架构解析</h2><p> <img src="/Users/apple/Documents/个人笔记/picture/屏幕快照 2017-12-24 下午12.48.54.png" alt="屏幕快照 2017-12-24 下午12.48.54"></p>
+<ul>
+<li>PMM Server：Server组件，作为Docker镜像提供的<ul>
+<li>Query Analytics（QAN）是用来搜集指令并作性能分析的，其组件分别如下：<ul>
+<li>QAN API：作为percona-qan-agent后端储存和读取Query资料用</li>
+<li>QAN APP：提供图形化分析界面</li>
+</ul>
+</li>
+<li>Metrics Monitor（MM）组件提供了MySQL和MongoDB历史监控信息，其组件分别如下：<ul>
+<li>Prometheus：一个开源的服务监控系统和时间序列数据库，它连接到PMM Client上的exporter聚集DB的监控数据</li>
+<li>Consul：提供API让PMM Client可以远端替Prometheus新增，移除hosts，同时它也储存了监控的metadata。</li>
+<li>Grafana：这是一个第三方Dashboard和图形构建器，用于可视化Prometheus中聚合的数据，以web呈现。</li>
+<li>Percona Dashboards：是由Percona开发的一组用于Grafana的仪表板</li>
+</ul>
+</li>
+<li>上述的2个Web页面都能从PMM Landing Page（就是PMM首页）直接连结</li>
+</ul>
+</li>
+<li>PMM Client：Client组件，一般以RPM包方式提供<ul>
+<li>pmm-admin：命令行的PMM Client管理工具，用来新增、移除监控的资料instance</li>
+<li>percona-qan-agent：用于搜集QAN查询效能性能资料，同时连接和传送资料给PMM Server中的QAN API</li>
+<li>node_exporter：Prometheus exporter用于收集一般系统信息<a href="https://github.com/prometheus/node_exporter" target="_blank" rel="external">https://github.com/prometheus/node_exporter</a>。</li>
+<li>mysqld_exporter：Prometheus exporter用于收集MySQL Server的信息<a href="https://github.com/percona/mysqld_exporter" target="_blank" rel="external">https://github.com/percona/mysqld_exporter</a>。</li>
+<li>mongodb_exporter：Prometheus exporter用于收集MongoDB Server的信息<a href="https://github.com/percona/mongodb_exporter" target="_blank" rel="external">https://github.com/percona/mongodb_exporter</a>。</li>
+</ul>
+</li>
+</ul>
+<h2 id="三、安装PMM-Server"><a href="#三、安装PMM-Server" class="headerlink" title="三、安装PMM Server"></a>三、安装PMM Server</h2><p>PMM Server是使用Docker镜像发布的，首要条件是安装Docker 1.13或更高版本，下面以CentOS 7系统为例说明。</p>
+<h3 id="1-安装Docker"><a href="#1-安装Docker" class="headerlink" title="1. 安装Docker"></a>1. 安装Docker</h3><p><strong>使用yum进行安装</strong></p>
+<figure class="highlight vala"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="meta"># step 1: 安装必要的一些系统工具</span></div><div class="line">yum install -y yum-utils device-mapper-persistent-data lvm2</div><div class="line"></div><div class="line"><span class="meta"># Step 2: 添加软件源信息</span></div><div class="line">yum-config-manager --add-repo http:<span class="comment">//mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo</span></div><div class="line"></div><div class="line"><span class="meta"># Step 3: 更新并安装 Docker-CE</span></div><div class="line">yum makecache fast</div><div class="line">yum -y install docker-ce</div><div class="line"></div><div class="line"><span class="meta"># Step 4: 开启Docker服务</span></div><div class="line">service docker start</div></pre></td></tr></table></figure>
+<p><strong>安装校验</strong></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"><span class="string">[root@dbsrv1</span> <span class="string">opt]#</span> <span class="string">docker</span> <span class="string">version</span></div><div class="line"><span class="attr">Client:</span></div><div class="line"><span class="attr"> Version:</span>      <span class="number">17.09</span><span class="number">.1</span><span class="bullet">-ce</span></div><div class="line"> <span class="string">API</span> <span class="attr">version:</span>  <span class="number">1.32</span></div><div class="line"> <span class="string">Go</span> <span class="attr">version:</span>   <span class="string">go1.8.3</span></div><div class="line"> <span class="string">Git</span> <span class="attr">commit:</span>   <span class="number">19e2</span><span class="string">cf6</span></div><div class="line"><span class="attr"> Built:</span>        <span class="string">Thu</span> <span class="string">Dec</span>  <span class="number">7</span> <span class="number">22</span><span class="string">:23:40</span> <span class="number">2017</span></div><div class="line"> <span class="string">OS/Arch:</span>      <span class="string">linux/amd64</span></div><div class="line"></div><div class="line"><span class="attr">Server:</span></div><div class="line"><span class="attr"> Version:</span>      <span class="number">17.09</span><span class="number">.1</span><span class="bullet">-ce</span></div><div class="line"> <span class="string">API</span> <span class="attr">version:</span>  <span class="number">1.32</span> <span class="string">(minimum</span> <span class="string">version</span> <span class="number">1.12</span><span class="string">)</span></div><div class="line"> <span class="string">Go</span> <span class="attr">version:</span>   <span class="string">go1.8.3</span></div><div class="line"> <span class="string">Git</span> <span class="attr">commit:</span>   <span class="number">19e2</span><span class="string">cf6</span></div><div class="line"><span class="attr"> Built:</span>        <span class="string">Thu</span> <span class="string">Dec</span>  <span class="number">7</span> <span class="number">22</span><span class="string">:25:03</span> <span class="number">2017</span></div><div class="line"> <span class="string">OS/Arch:</span>      <span class="string">linux/amd64</span></div><div class="line"><span class="attr"> Experimental:</span> <span class="literal">false</span></div></pre></td></tr></table></figure>
+<p><strong>配置Docker镜像加速器</strong></p>
+<p>由于网络原因，下载官方镜像的速度超级慢，可以使用阿里云容器Hub服务提供的官方镜像站点来加速官方镜像的下载速度</p>
+<p>针对Docker客户端版本大于1.10.0的CentOS用户，可以通过修改daemon配置文件<code>/etc/docker/daemon.json</code>来使用加速器：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">mkdir -<span class="selector-tag">p</span> /etc/docker</div><div class="line">tee /etc/docker/daemon<span class="selector-class">.json</span> &lt;&lt;-<span class="string">'EOF'</span></div><div class="line">&#123;</div><div class="line">  <span class="string">"registry-mirrors"</span>: [<span class="string">"https://0csf00y6.mirror.aliyuncs.com"</span>]</div><div class="line">&#125;</div><div class="line">EOF</div><div class="line">systemctl daemon-reload</div><div class="line">systemctl restart docker</div></pre></td></tr></table></figure>
+<p><strong>说明：</strong></p>
+<p>关于加速器的地址，需要登录<a href="https://cr.console.aliyun.com" target="_blank" rel="external">容器Hub服务</a>申请即可，需要有阿里云账号</p>
+<h3 id="2-获取PMM-Server镜像文件"><a href="#2-获取PMM-Server镜像文件" class="headerlink" title="2. 获取PMM Server镜像文件"></a>2. 获取PMM Server镜像文件</h3><figure class="highlight axapta"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">docker pull percona/pmm-<span class="keyword">server</span>:latest</div></pre></td></tr></table></figure>
+<h3 id="3-创建PMM数据容器"><a href="#3-创建PMM数据容器" class="headerlink" title="3. 创建PMM数据容器"></a>3. 创建PMM数据容器</h3><figure class="highlight crystal"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">docker create \</div><div class="line">    -v /opt/prometheus/data \</div><div class="line">    -v /opt/consul-data \</div><div class="line">    -v /var/<span class="class"><span class="keyword">lib</span>/<span class="title">mysql</span> \</span></div><div class="line">    -v /var/<span class="class"><span class="keyword">lib</span>/<span class="title">grafana</span> \</span></div><div class="line">    --name pmm-data \</div><div class="line">    percona/pmm-<span class="symbol">server:</span>latest /bin/<span class="literal">true</span></div></pre></td></tr></table></figure>
+<p>此时容器不运行，它只是存在，以确保你在升级到较新的pmm-server时保留所有PMM数据。不要删除或重新创建此容器，除非你打算清除所有PMM数据并重新开始。</p>
+<p>上面的命令执行以下操作：</p>
+<ul>
+<li><code>docker create</code>：该命令指示Docker守护程序</li>
+<li><code>-v</code>：该选项初始化数据卷的容器</li>
+<li><code>--name</code>：该选项为你可以用于引用Docker网络中的容器分配一个自定义名称</li>
+<li><code>ercona/pmm-server:latest</code>：是导出容器的镜像名称和版本，latest表示最新版本</li>
+<li><code>/bin/true</code>：是容器运行的命令</li>
+</ul>
+<h3 id="4-运行PMM容器"><a href="#4-运行PMM容器" class="headerlink" title="4. 运行PMM容器"></a>4. 运行PMM容器</h3><figure class="highlight haml"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">docker run -d \</div><div class="line">    -<span class="ruby">p <span class="number">80</span><span class="symbol">:</span><span class="number">80</span> \</span></div><div class="line"><span class="ruby">    --volumes-from pmm-data \</span></div><div class="line"><span class="ruby">    --name pmm-server \</span></div><div class="line"><span class="ruby">    --restart always \</span></div><div class="line"><span class="ruby">    percona/pmm-<span class="symbol">server:</span>latest</span></div></pre></td></tr></table></figure>
+<p>以上的命令执行以下操作：</p>
+<ul>
+<li><code>docker run</code>：该命令指示守护程序从镜像运行容器</li>
+<li><code>-d</code>：该选项在分离模式（即后台）中启动容器</li>
+<li><code>-p</code>：该选项映射用于访问PMM服务器Web UI的端口，例如-p 8080:80，如果端口80不可用，则可以使用登录页面映射到端口8080</li>
+<li><code>--volumes-from</code>：该选项从pmm-data容器中装入卷</li>
+<li><code>--name</code>：该选项为你可以用于引用Docker网络中的容器分配一个自定义名称</li>
+<li><code>--restart</code>：该选项定义容器的重新启动策略，设置它以always确保Docker守护程序在启动时启动容器，并在容器退出时重新启动它</li>
+<li><code>percona/pmm-server:latest</code>：是导出容器的镜像名称和版本</li>
+</ul>
+<h3 id="5-验证PMM-Server安装"><a href="#5-验证PMM-Server安装" class="headerlink" title="5. 验证PMM Server安装"></a>5. 验证PMM Server安装</h3><p>查看Docker运行状态</p>
+<figure class="highlight axapta"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[root@dbsrv1 opt]<span class="meta"># docker ps</span></div><div class="line">CONTAINER ID        IMAGE                       COMMAND                CREATED             STATUS              PORTS                         NAMES</div><div class="line"><span class="number">26</span>a60e9b504f        percona/pmm-<span class="keyword">server</span>:latest   <span class="string">"/opt/entrypoint.sh"</span>   <span class="number">4</span> minutes ago       Up <span class="number">4</span> minutes        <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">80</span>-&gt;<span class="number">80</span>/tcp, <span class="number">443</span>/tcp   pmm-<span class="keyword">server</span></div></pre></td></tr></table></figure>
+<p>运行PMM Server之后，可以使用运行容器的主机IP地址(192.168.56.130)访问PMM Web界面。</p>
+<p> <img src="picture/屏幕快照 2017-12-24 下午2.22.50.png" alt="屏幕快照 2017-12-24 下午2.22.50"></p>
+<h2 id="四、安装PMM-Client"><a href="#四、安装PMM-Client" class="headerlink" title="四、安装PMM Client"></a>四、安装PMM Client</h2><p>PMM Client是安装在你要监视的MySQL或MongoDB主机上的一组代理组件。用于收集关于一般系统和数据库性能的各种数据，并将这些数据发送到相应的PMM服务器组件。</p>
+<p>PMM Client可以运行在任何Linux发行版本上，这里已CentOS 7为例。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span><span class="bash"> rpm -ivh https://www.percona.com/downloads/pmm-client/LATEST/pmm-client-1.5.3-1.x86_64.rpm </span></div><div class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">which</span> pmm-admin</span></div><div class="line">/usr/sbin/pmm-admin</div></pre></td></tr></table></figure>
+<p>pmm-admin工具用来管理PMM客户端，该工具需要root访问权限。该命令详细用法查看help或官方文档</p>
+<h3 id="五、添加MySQL监控"><a href="#五、添加MySQL监控" class="headerlink" title="五、添加MySQL监控"></a>五、添加MySQL监控</h3><h3 id="1-连接PMM服务器"><a href="#1-连接PMM服务器" class="headerlink" title="1. 连接PMM服务器"></a>1. 连接PMM服务器</h3><p>安装PMM Client之后，它不会自动连接到PMM Server上。要将客户端连接到PMM服务器，请使用下面命令，指定PMM Server的IP地址</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">[root@node1 vagrant]# pmm-admin<span class="built_in"> config </span>--server 192.168.56.130</div><div class="line">OK, PMM<span class="built_in"> server </span>is alive.</div><div class="line"></div><div class="line">PMM<span class="built_in"> Server </span>     | 192.168.56.130</div><div class="line">Client Name     | node2</div><div class="line">Client<span class="built_in"> Address </span> | 192.168.56.111</div></pre></td></tr></table></figure>
+<h3 id="2-创建监控账号"><a href="#2-创建监控账号" class="headerlink" title="2. 创建监控账号"></a>2. 创建监控账号</h3><figure class="highlight livescript"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">root@localhost:mysql3306.sock [(none)]&gt;grant all <span class="literal">on</span> *.* <span class="keyword">to</span> <span class="string">'monitor'</span>@<span class="string">'localhost'</span> identified <span class="keyword">by</span> <span class="string">'123123'</span>;</div><div class="line">Query OK, <span class="number">0</span> rows affected, <span class="number">1</span> warning (<span class="number">0.01</span> sec)</div><div class="line"></div><div class="line">root@localhost:mysql3306.sock [(none)]&gt;flush privileges;</div><div class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.01</span> sec)</div></pre></td></tr></table></figure>
+<h3 id="3-添加MySQL监控和主机监控"><a href="#3-添加MySQL监控和主机监控" class="headerlink" title="3. 添加MySQL监控和主机监控"></a>3. 添加MySQL监控和主机监控</h3><figure class="highlight cs"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">[<span class="meta">root@node1 ~</span>]<span class="meta"># pmm-admin add mysql --user monitor --password='123123' --host localhost --port 3306</span></div><div class="line">[<span class="meta">linux:metrics</span>] OK, now monitoring <span class="keyword">this</span> system.</div><div class="line">[<span class="meta">mysql:metrics</span>] OK, now monitoring MySQL metrics <span class="keyword">using</span> DSN monitor:***@unix(/tmp/mysql3306.sock)</div><div class="line">[<span class="meta">mysql:queries</span>] OK, now monitoring MySQL queries <span class="keyword">from</span> slowlog <span class="keyword">using</span> DSN monitor:***@unix(/tmp/mysql3306.sock)</div></pre></td></tr></table></figure>
+<p>pmm client收集的监控数据来源有这么几个方面：</p>
+<ul>
+<li>MySQL所在机器的系统指标（linux:meteric）</li>
+<li>MySQL的performance_schema（mysql:meteric）</li>
+<li>MySQL慢查询日志（mysql:queries）</li>
+</ul>
+<p>查看配置后的结果</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">[root@node1 ~]# pmm-admin list</div><div class="line">pmm-admin 1.5.3</div><div class="line"></div><div class="line">PMM<span class="built_in"> Server </span>     | 192.168.56.130</div><div class="line">Client Name     | node1</div><div class="line">Client<span class="built_in"> Address </span> | 192.168.56.110</div><div class="line">Service Manager | linux-systemd</div><div class="line"></div><div class="line">-------------- ------ ----------- -------- -------------------------------------- ------------------------------------------</div><div class="line">SERVICE<span class="built_in"> TYPE </span>  NAME   LOCAL<span class="built_in"> PORT </span> RUNNING  DATA SOURCE                            OPTIONS</div><div class="line">-------------- ------ ----------- -------- -------------------------------------- ------------------------------------------</div><div class="line">mysql:queries  node1  -           <span class="literal">YES</span>      monitor:***@unix(/tmp/mysql3306.sock)  <span class="attribute">query_source</span>=slowlog, <span class="attribute">query_examples</span>=<span class="literal">true</span></div><div class="line">linux:metrics  node1  42000       <span class="literal">YES</span>      -</div><div class="line">mysql:metrics  node1  42002       <span class="literal">YES</span>      monitor:***@unix(/tmp/mysql3306.sock)</div></pre></td></tr></table></figure>
+<p>查看exporter监听端口</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">[root@node1 ~]# netstat -nlpt|grep export</div><div class="line">tcp        <span class="number">0</span>      <span class="number">0</span> <span class="number">192.168</span><span class="meta">.56</span><span class="meta">.111</span>:<span class="number">42000</span>    <span class="number">0.0</span><span class="meta">.0</span><span class="meta">.0</span>:*               LISTEN      <span class="number">5277</span>/node_exporter</div><div class="line">tcp        <span class="number">0</span>      <span class="number">0</span> <span class="number">192.168</span><span class="meta">.56</span><span class="meta">.111</span>:<span class="number">42002</span>    <span class="number">0.0</span><span class="meta">.0</span><span class="meta">.0</span>:*               LISTEN      <span class="number">5312</span>/mysqld_exporte</div></pre></td></tr></table></figure>
+<h2 id="六、查看监控平台"><a href="#六、查看监控平台" class="headerlink" title="六、查看监控平台"></a>六、查看监控平台</h2><p>使用运行PMM Server的主机IP访问PMM Web界面，目标网页链接到相应的PMM工具：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Component</th>
+<th>URL</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">PMM landing page</td>
+<td><a href="http://192.168.56.130" target="_blank" rel="external">http://192.168.56.130</a></td>
+<td>PMM跳转页</td>
+</tr>
+<tr>
+<td style="text-align:left">Query Analytics (QAN web app)</td>
+<td><a href="http://192.168.56.130/qan" target="_blank" rel="external">http://192.168.56.130/qan</a></td>
+<td>SQL慢日志分析</td>
+</tr>
+<tr>
+<td style="text-align:left">Metrics Monitor (Grafana)</td>
+<td><a href="http://192.168.56.130/graph" target="_blank" rel="external">http://192.168.56.130/graph</a></td>
+<td>监控指标图标，user name:admin, password:admin</td>
+</tr>
+<tr>
+<td style="text-align:left">Orchestrator</td>
+<td><a href="http://192.168.56.130/orchestrator" target="_blank" rel="external">http://192.168.56.130/orchestrator</a></td>
+<td>MySQL集群拓扑结构</td>
+</tr>
+</tbody>
+</table>
+<h3 id="1-指标监控"><a href="#1-指标监控" class="headerlink" title="1. 指标监控"></a>1. 指标监控</h3><p>该监控工具提供了对数据库服务器的关键指标，基于时间的图标展示。</p>
+<p>通过主题分为若干个仪表板，一些与MySQL或MongoDB相关，其他的则提供了一般的系统指标</p>
+<p>要访问仪表板，需要提供默认用户：admin，密码：admin</p>
+<p> <img src="picture/屏幕快照 2017-12-24 下午3.30.16.png" alt="屏幕快照 2017-12-24 下午3.30.16"></p>
+<h3 id="2-慢查询分析"><a href="#2-慢查询分析" class="headerlink" title="2. 慢查询分析"></a>2. 慢查询分析</h3><p>该查询分析工具，使数据库管理员和应用程序开发人员分析一段时间内的MySQL查询，发现性能问题，优化数据库性能。</p>
+<p>PMM使用slow log作为查询源（还可以以performance_schema作为数据源），记得需要开启慢查询日志。</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">slow_query_log=1   <span class="comment">#开启慢查询日志；</span></div><div class="line">long_query_time=0  <span class="comment">#超过多少秒的查询就写入日志；</span></div></pre></td></tr></table></figure>
+<p>以下图片显示了Query Analytics</p>
+<p><img src="picture/屏幕快照 2017-12-24 下午3.58.00.png" alt="屏幕快照 2017-12-24 下午3.58.00"></p>
+<p>汇总表包含以%GTT(总计时间的百分比)排名的前十名查询，这是MySQL服务器执行特定查询所花费的时间百分比，与在所选期间执行所有查询的总时间相比。</p>
+<p>在汇总表上单击，可以获取该查询的详细信息，包括该SQL的所有指标，SQL语句示例，explain等</p>
+<p>另外查询数据的默认源是慢查询日志，可以调整为Performance Schema。</p>
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ol>
+<li><a href="https://www.percona.com/doc/percona-monitoring-and-management/index.html" target="_blank" rel="external">https://www.percona.com/doc/percona-monitoring-and-management/index.html</a></li>
+<li><a href="http://www.ywnds.com/?p=9713" target="_blank" rel="external">http://www.ywnds.com/?p=9713</a></li>
+</ol>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/lunblog/tags/pmm/" rel="tag"># pmm</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/lunblog/2017/08/14/datagurad-mrp/" rel="next" title="Dataguard故障--MRP进程终止">
+                <i class="fa fa-chevron-left"></i> Dataguard故障--MRP进程终止
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/lunblog/images/avatar.gif"
+               alt="a dba's blog" />
+          <p class="site-author-name" itemprop="name">a dba's blog</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/lunblog/archives/">
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/lunblog/tags/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/lunblog/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#安装PMM监控MySQL（CentOS-7）"><span class="nav-number">1.</span> <span class="nav-text">安装PMM监控MySQL（CentOS 7）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#一、PMM介绍"><span class="nav-number">1.1.</span> <span class="nav-text">一、PMM介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#二、PMM架构解析"><span class="nav-number">1.2.</span> <span class="nav-text">二、PMM架构解析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#三、安装PMM-Server"><span class="nav-number">1.3.</span> <span class="nav-text">三、安装PMM Server</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-安装Docker"><span class="nav-number">1.3.1.</span> <span class="nav-text">1. 安装Docker</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-获取PMM-Server镜像文件"><span class="nav-number">1.3.2.</span> <span class="nav-text">2. 获取PMM Server镜像文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-创建PMM数据容器"><span class="nav-number">1.3.3.</span> <span class="nav-text">3. 创建PMM数据容器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-运行PMM容器"><span class="nav-number">1.3.4.</span> <span class="nav-text">4. 运行PMM容器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-验证PMM-Server安装"><span class="nav-number">1.3.5.</span> <span class="nav-text">5. 验证PMM Server安装</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#四、安装PMM-Client"><span class="nav-number">1.4.</span> <span class="nav-text">四、安装PMM Client</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#五、添加MySQL监控"><span class="nav-number">1.4.1.</span> <span class="nav-text">五、添加MySQL监控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-连接PMM服务器"><span class="nav-number">1.4.2.</span> <span class="nav-text">1. 连接PMM服务器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-创建监控账号"><span class="nav-number">1.4.3.</span> <span class="nav-text">2. 创建监控账号</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-添加MySQL监控和主机监控"><span class="nav-number">1.4.4.</span> <span class="nav-text">3. 添加MySQL监控和主机监控</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#六、查看监控平台"><span class="nav-number">1.5.</span> <span class="nav-text">六、查看监控平台</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-指标监控"><span class="nav-number">1.5.1.</span> <span class="nav-text">1. 指标监控</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-慢查询分析"><span class="nav-number">1.5.2.</span> <span class="nav-text">2. 慢查询分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文档"><span class="nav-number">1.6.</span> <span class="nav-text">参考文档</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">a dba's blog</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lunblog/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lunblog/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lunblog/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lunblog/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lunblog/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lunblog/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/lunblog/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/lunblog/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/lunblog/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/lunblog/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/lunblog/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/lunblog/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/lunblog/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
